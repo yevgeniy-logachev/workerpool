@@ -1,10 +1,11 @@
 package workerpool
 
 import (
-	"github.com/gammazero/deque"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/gammazero/deque"
 )
 
 const (
@@ -24,6 +25,15 @@ const (
 // execute tasks concurrently.  After each timeout period, a worker goroutine
 // is stopped until there are no remaining workers.
 func New(maxWorkers int) *WorkerPool {
+	return NewWithTimeout(maxWorkers, idleTimeoutSec)
+}
+
+// NewWithTimeout creates and starts a pool of worker goroutines.
+//
+// The maxWorkers parameter specifies the maximum number of workers that will
+// execute tasks concurrently.  After each timeout period, a worker goroutine
+// is stopped until there are no remaining workers.
+func NewWithTimeout(maxWorkers int, idleTimeout int) *WorkerPool {
 	// There must be at least one worker.
 	if maxWorkers < 1 {
 		maxWorkers = 1
@@ -33,7 +43,7 @@ func New(maxWorkers int) *WorkerPool {
 		taskQueue:    make(chan func(), 1),
 		maxWorkers:   maxWorkers,
 		readyWorkers: make(chan chan func(), readyQueueSize),
-		timeout:      time.Second * idleTimeoutSec,
+		timeout:      time.Second * time.Duration(idleTimeout),
 		stoppedChan:  make(chan struct{}),
 	}
 
