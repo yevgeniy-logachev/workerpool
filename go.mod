@@ -1,4 +1,4 @@
-module github.com/gammazero/workerpool
+module github.com/yevgeniy-logachev/workerpool
 
 require github.com/gammazero/deque v0.1.0
 
