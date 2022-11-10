@@ -1,5 +1,8 @@
 module github.com/yevgeniy-logachev/workerpool
 
-require github.com/gammazero/deque v0.1.0
+go 1.18
 
-go 1.13
+require (
+	github.com/gammazero/deque v0.2.1
+	github.com/gammazero/workerpool v1.1.3
+)

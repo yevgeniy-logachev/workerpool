@@ -45,6 +45,7 @@ func NewWithTimeout(maxWorkers int, idleTimeout int) *WorkerPool {
 		readyWorkers: make(chan chan func(), readyQueueSize),
 		timeout:      time.Second * time.Duration(idleTimeout),
 		stoppedChan:  make(chan struct{}),
+		waitingQueue: deque.New[func()](),
 	}
 
 	// Start the task dispatcher.
@@ -61,7 +62,7 @@ type WorkerPool struct {
 	taskQueue    chan func()
 	readyWorkers chan chan func()
 	stoppedChan  chan struct{}
-	waitingQueue deque.Deque
+	waitingQueue *deque.Deque[func()]
 	stopOnce     sync.Once
 	stopped      int32
 	waiting      int32
@@ -165,7 +166,7 @@ Loop:
 				p.waitingQueue.PushBack(task)
 			case workerTaskChan = <-p.readyWorkers:
 				// A worker is ready, so give task to worker.
-				workerTaskChan <- p.waitingQueue.PopFront().(func())
+				workerTaskChan <- p.waitingQueue.PopFront()
 			}
 			atomic.StoreInt32(&p.waiting, int32(p.waitingQueue.Len()))
 			continue
@@ -219,7 +220,7 @@ Loop:
 		for p.waitingQueue.Len() != 0 {
 			workerTaskChan = <-p.readyWorkers
 			// A worker is ready, so give task to worker.
-			workerTaskChan <- p.waitingQueue.PopFront().(func())
+			workerTaskChan <- p.waitingQueue.PopFront()
 			atomic.StoreInt32(&p.waiting, int32(p.waitingQueue.Len()))
 		}
 	}
